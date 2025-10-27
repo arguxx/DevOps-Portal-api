@@ -1,0 +1,5 @@
+pyyaml
+streamlit
+pytest
+flask
+flask-cors
