@@ -3,15 +3,15 @@ import yaml
 def generate_deployment(data):
     name = data.get('name')
     image = data.get('image')
-    replicas = data.get('replicas')
+    tier = data.get('tier')
     namespace = data.get('namespace')
-    ports_input = data.get('ports')
+    port = data.get('ports')
     action = data.get('action') 
 
-    if isinstance(ports_input, str):
-        ports = [p.strip() for p in ports_input.split(",") if p.strip()]
-    elif isinstance(ports_input, list):
-        ports = [str(p).strip() for p in ports_input if str(p).strip()]
+    if isinstance(port, str):
+        ports = [p.strip() for p in port.split(",") if p.strip()]
+    elif isinstance(port, list):
+        ports = [str(p).strip() for p in port if str(p).strip()]
     else:
         ports = None
 
@@ -39,8 +39,8 @@ def generate_deployment(data):
 
     if namespace:
         deployment["metadata"]["namespace"] = namespace
-    if replicas:
-        deployment["spec"]["replicas"] = int(replicas)
+    if tier:
+        deployment["spec"]["tier"] = int(tier)
     if container_ports:
         deployment["spec"]["template"]["spec"]["containers"][0]["ports"] = container_ports
 
@@ -51,4 +51,59 @@ def generate_deployment(data):
         return yaml_output
     elif action == "print":
         return yaml_output
+    
+def generate_service(data):
+    name = data.get('name')
+    tier = data.get('tier')
+    namespace = data.get('namespace')
+    action = data.get('action') 
+    port = data.get('port')
+    target_port = data.get('targetPort')
+    node_port = data.get('nodePort')
+
+    try:
+        port = int(port) if port else None
+    except ValueError:
+        raise ValueError("Port must be valid integers.")
+    
+    try:
+        target_port = int(target_port) if target_port else None
+    except ValueError:
+        raise ValueError("Target Port must be valid integers.")
+
+    service = {
+        "apiVersion": "v1",
+        "kind": "Service",
+        "metadata": {
+            "name": name,
+            "tier": tier
+            },
+        "spec": {
+            "selector": {
+                "matchLabels": {
+                    "app": name,
+                    "tier": tier
+                    }
+                },
+            "ports": [
+                {
+                    "name": "name",
+                    "port": port,
+                    "protocol": "TCP",
+                    "targetPort": target_port,
+                    "nodePort": node_port
+                }
+                ],
+            "type": "NodePort"
+            }
+        }
+    if namespace:
+        service["metadata"]["namespace"] = namespace
+
+    yaml_output = yaml.dump(service, sort_keys=False)
+    if action == "generate":
+        return yaml_output
+    elif action == "print":
+        return yaml_output
+
 
