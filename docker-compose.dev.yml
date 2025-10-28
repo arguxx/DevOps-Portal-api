@@ -1,0 +1,56 @@
+version: "3.8"
+
+services:
+  postgres:
+    build:
+      context: .
+      dockerfile: Dockerfile.postgres
+    container_name: manifest-manager-postgres
+    environment:
+      POSTGRES_DB: manifest_manager_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - manifest-manager-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: manifest-manager-api
+    environment:
+      FLASK_ENV: development
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/manifest_manager_db
+      SECRET_KEY: dev-secret-key-change-in-production
+    ports:
+      - "5001:5001"
+    volumes:
+      - .:/app
+      - /app/.venv # Prevent overwriting venv
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - manifest-manager-network
+    command: python run.py
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  manifest-manager-network:
+    driver: bridge
