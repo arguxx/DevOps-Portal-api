@@ -6,7 +6,6 @@ def generate_deployment(data):
     tier = data.get('tier')
     namespace = data.get('namespace')
     port = data.get('ports')
-    action = data.get('action') 
 
     if isinstance(port, str):
         ports = [p.strip() for p in port.split(",") if p.strip()]
@@ -44,19 +43,12 @@ def generate_deployment(data):
     if container_ports:
         deployment["spec"]["template"]["spec"]["containers"][0]["ports"] = container_ports
 
-    yaml_output = yaml.dump(deployment, sort_keys=False)
-    # return f"<pre>{yaml_output}</pre>"
+    return yaml.dump(deployment, sort_keys=False)
 
-    if action == "generate":
-        return yaml_output
-    elif action == "print":
-        return yaml_output
-    
 def generate_service(data):
     name = data.get('name')
     tier = data.get('tier')
     namespace = data.get('namespace')
-    action = data.get('action') 
     port = data.get('port')
     target_port = data.get('targetPort')
     node_port = data.get('nodePort')
@@ -77,14 +69,14 @@ def generate_service(data):
         "metadata": {
             "name": name,
             "tier": tier
-            },
+        },
         "spec": {
             "selector": {
                 "matchLabels": {
                     "app": name,
                     "tier": tier
-                    }
-                },
+                }
+            },
             "ports": [
                 {
                     "name": "name",
@@ -93,17 +85,14 @@ def generate_service(data):
                     "targetPort": target_port,
                     "nodePort": node_port
                 }
-                ],
+            ],
             "type": "NodePort"
-            }
         }
+    }
+    
     if namespace:
         service["metadata"]["namespace"] = namespace
 
-    yaml_output = yaml.dump(service, sort_keys=False)
-    if action == "generate":
-        return yaml_output
-    elif action == "print":
-        return yaml_output
+    return yaml.dump(service, sort_keys=False)
 
 
